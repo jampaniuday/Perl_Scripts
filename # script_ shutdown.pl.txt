@@ -1,0 +1,48 @@
+﻿# script: shutdown.pl
+# Tasks: Shutting Down all databases located in the Oracle 3 RAC.
+#
+#------------------- Revision History -------------------------------------
+# Date by Changes
+# 07-23-2008 nlharrington Initial Release.
+#
+
+
+use strict;
+use warnings;
+use DBI;
+open FILEIN, "Z:\\orascrpt\\_Backup\\Database.txt";
+while (<FILEIN>)
+{
+ my($database) = $_;
+ chomp($database);
+ my $dataSource = "host= plainfield-OD3; sid=$database; port=1521";
+ my $userName = "rman_bkup";
+ my $password = "rman";
+ my $dbh = DBI->connect("dbi:Oracle:$dataSource", $userName, $password, {ora_session_mode => 2})
+ or die "Can't connect" . DBI->errstr;
+ 
+ my $sql = "SELECT NAME FROM V\$DATABASE";
+ my $sth = $dbh->prepare($sql);
+ $sth->execute();
+ open FILEOUT, ">>shutdown.log";
+ while ( my @row = $sth->fetchrow_array() ) {
+     foreach (@row) {
+         $_ = "\t" if !defined($_);
+         print FILEOUT "$_\t";
+     }
+     print FILEOUT "\n";
+ }
+ my $sql1 = "SELECT OPEN_MODE FROM V\$DATABASE";
+ my $sth1 = $dbh->prepare($sql1);
+ $sth1->execute();
+ while ( my @row = $sth1->fetchrow_array() ) {
+     foreach (@row) {
+         $_ = "\t" if !defined($_);
+         print FILEOUT "$_\t";
+     }
+     print FILEOUT "\n";
+ }
+
+
+}
+close FILEIN;
